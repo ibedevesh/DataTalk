@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import google.generativeai as genai
+import plotly.express as px
 
 # Basic page config
 st.set_page_config(
@@ -100,7 +101,15 @@ with col2:
     # Rating distribution
     st.markdown("### Rating Distribution")
     rating_counts = reviews_df['rating'].value_counts().sort_index()
-    st.bar_chart(rating_counts)
+    
+    # Create the bar chart using plotly
+    fig = px.bar(
+        x=rating_counts.index,
+        y=rating_counts.values,
+        labels={'x': 'Rating', 'y': 'Count'},
+        title='Rating Distribution'
+    )
+    st.plotly_chart(fig, use_container_width=True)
     
     # Example questions
     st.markdown("### 💡 Example Questions")
