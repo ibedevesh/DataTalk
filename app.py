@@ -92,6 +92,7 @@ st.write("Ask questions about customer reviews for Atlys visa services")
 # Load the data
 reviews_df = load_data()
 if reviews_df is None:
+    st.error("Failed to load data. Please check the data source and try again.")
     st.stop()
 
 # Create two columns for the layout
