@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from anthropic import Anthropic
+import google.generativeai as genai
 import os
 
 # Set page config
@@ -30,11 +30,12 @@ st.markdown("""
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
 
-# Initialize Anthropic client using Streamlit secrets
+# Initialize Gemini client using Streamlit secrets
 try:
-    client = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    model = genai.GenerativeModel('gemini-pro')
 except Exception as e:
-    st.error("Error: Unable to initialize Claude API. Please check your API key in Streamlit secrets.")
+    st.error("Error: Unable to initialize Gemini API. Please check your API key in Streamlit secrets.")
     st.stop()
 
 # Load and process the data
@@ -52,7 +53,7 @@ def load_data():
         st.error(f"Error loading data: {str(e)}")
         return None
 
-def get_claude_response(prompt, reviews_df):
+def get_gemini_response(prompt, reviews_df):
     try:
         # Create a context from the reviews (limit to most recent 100 reviews to avoid token limits)
         recent_reviews = reviews_df.tail(100)
@@ -61,7 +62,7 @@ def get_claude_response(prompt, reviews_df):
             for _, row in recent_reviews.iterrows()
         ])
         
-        # Create the full prompt for Claude
+        # Create the full prompt for Gemini
         full_prompt = f"""Here are some recent customer reviews for a visa application service called Atlys:
 
 {reviews_text}
@@ -71,19 +72,11 @@ Based on these reviews, please answer the following question:
 
 Please provide a detailed analysis based on the reviews, including specific examples and patterns you notice. Focus on being helpful and constructive in your analysis."""
 
-        # Get response from Claude
-        response = client.messages.create(
-            model=st.secrets.get("CLAUDE_MODEL_NAME", "claude-3-sonnet-20240229"),
-            max_tokens=1000,
-            messages=[{
-                "role": "user",
-                "content": full_prompt
-            }]
-        )
-        
-        return response.content[0].text
+        # Get response from Gemini
+        response = model.generate_content(full_prompt)
+        return response.text
     except Exception as e:
-        return f"Error getting response from Claude: {str(e)}"
+        return f"Error getting response from Gemini: {str(e)}"
 
 # Main app layout
 st.title("📊 Atlys Review Analysis Chat")
@@ -105,7 +98,7 @@ with col1:
 
     if user_question:
         with st.spinner("Analyzing reviews..."):
-            response = get_claude_response(user_question, reviews_df)
+            response = get_gemini_response(user_question, reviews_df)
             st.session_state.chat_history.append({"question": user_question, "answer": response})
             
             # Display the response
@@ -122,8 +115,11 @@ with col1:
 with col2:
     # Statistics
     st.markdown("### 📈 Review Statistics")
-    st.metric("Total Reviews", len(reviews_df))
-    st.metric("Average Rating", f"{reviews_df['rating'].mean():.2f}/5")
+    total_reviews = len(reviews_df)
+    avg_rating = reviews_df['rating'].mean()
+    
+    st.metric("Total Reviews", total_reviews)
+    st.metric("Average Rating", f"{avg_rating:.2f}/5")
     
     # Rating distribution
     st.markdown("### Rating Distribution")
@@ -147,10 +143,10 @@ with col2:
         if st.button(question, key=question):
             st.session_state.chat_history.append({
                 "question": question,
-                "answer": get_claude_response(question, reviews_df)
+                "answer": get_gemini_response(question, reviews_df)
             })
             st.experimental_rerun()
 
 # Footer
 st.markdown("---")
-st.markdown("Made with ❤️ using Streamlit and Claude AI") 
+st.markdown("Made with ❤️ using Streamlit and Gemini AI") 
