@@ -41,7 +41,9 @@ except Exception as e:
 @st.cache_data
 def load_data():
     try:
-        df = pd.read_csv('all_reviews.csv')
+        # Use the raw GitHub URL for the CSV file
+        github_url = "https://raw.githubusercontent.com/your-username/your-repo/main/all_reviews.csv"
+        df = pd.read_csv(github_url)
         # Clean the data
         df['text'] = df['text'].str.replace('more_vert Flag inappropriate', '')
         df['text'] = df['text'].str.replace('Did you find this helpful?YesNo', '')
