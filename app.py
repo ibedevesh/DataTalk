@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 import google.generativeai as genai
 
-# Set page config
+# Basic page config
 st.set_page_config(
-    page_title="Atlys Review Analysis",
+    page_title="Review Analysis",
     page_icon="📊",
     layout="wide"
 )
@@ -43,7 +43,7 @@ def load_data():
         st.error(f"Error loading data: {str(e)}")
         return None
 
-def get_gemini_response(prompt, reviews_df):
+def analyze_reviews(prompt, reviews_df):
     try:
         recent_reviews = reviews_df.tail(100)
         reviews_text = "\n".join([
@@ -63,10 +63,10 @@ Please provide a detailed analysis based on the reviews, including specific exam
         response = model.generate_content(full_prompt)
         return response.text
     except Exception as e:
-        return f"Error getting response from Gemini: {str(e)}"
+        return f"Error analyzing reviews: {str(e)}"
 
-# Main app layout
-st.title("📊 Atlys Review Analysis Chat")
+# Main interface
+st.title("📊 Review Analysis")
 
 # Load data
 reviews_df = load_data()
@@ -78,19 +78,19 @@ if reviews_df is None:
 col1, col2 = st.columns([2, 1])
 
 with col1:
-    # Chat interface
-    user_question = st.text_input("What would you like to know about the reviews?", 
+    # Question input
+    user_question = st.text_input("Ask a question about the reviews:", 
                                 placeholder="e.g., What are the main complaints from customers?")
 
     if user_question:
-        with st.spinner("Analyzing reviews..."):
-            response = get_gemini_response(user_question, reviews_df)
+        with st.spinner("Analyzing..."):
+            analysis = analyze_reviews(user_question, reviews_df)
             st.markdown("### Analysis")
-            st.write(response)
+            st.write(analysis)
 
 with col2:
     # Statistics
-    st.markdown("### 📈 Review Statistics")
+    st.markdown("### 📈 Statistics")
     total_reviews = len(reviews_df)
     avg_rating = reviews_df['rating'].mean()
     
@@ -115,9 +115,9 @@ with col2:
     for question in example_questions:
         if st.button(question, key=question):
             with st.spinner("Analyzing..."):
-                response = get_gemini_response(question, reviews_df)
+                analysis = analyze_reviews(question, reviews_df)
                 st.markdown("### Analysis")
-                st.write(response)
+                st.write(analysis)
 
 # Footer
 st.markdown("---")
